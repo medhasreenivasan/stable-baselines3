@@ -48,6 +48,7 @@ class OnPolicyAlgorithm(BaseAlgorithm):
         Setting it to auto, the code will be run on the GPU if possible.
     :param _init_setup_model: Whether or not to build the network at the creation of the instance
     :param supported_action_spaces: The action spaces supported by the algorithm.
+    :param n_step_advantage: If set to True, the working of compute_returns_and_advantage in buffers.py will use n-step bootstrap method for estimation of V values
     """
 
     def __init__(
@@ -71,6 +72,7 @@ class OnPolicyAlgorithm(BaseAlgorithm):
         device: Union[th.device, str] = "auto",
         _init_setup_model: bool = True,
         supported_action_spaces: Optional[Tuple[spaces.Space, ...]] = None,
+        n_step_advantage: bool = False,
     ):
         super().__init__(
             policy=policy,
@@ -94,6 +96,7 @@ class OnPolicyAlgorithm(BaseAlgorithm):
         self.vf_coef = vf_coef
         self.max_grad_norm = max_grad_norm
         self.rollout_buffer = None
+        self.n_step_advantage = n_step_advantage
 
         if _init_setup_model:
             self._setup_model()
@@ -112,6 +115,7 @@ class OnPolicyAlgorithm(BaseAlgorithm):
             gamma=self.gamma,
             gae_lambda=self.gae_lambda,
             n_envs=self.n_envs,
+            n_step_advantage = self.n_step_advantage
         )
         self.policy = self.policy_class(  # pytype:disable=not-instantiable
             self.observation_space,
@@ -265,7 +269,10 @@ class OnPolicyAlgorithm(BaseAlgorithm):
                 self.logger.dump(step=self.num_timesteps)
 
             self.train()
-
+        if self.n_step_advantage:
+            self.logger.log("*** Using A2C with the modified n-step advantage  ***")
+        else:
+            self.logger.log("*** Using A2C with basic vanilla advantage  ***")
         callback.on_training_end()
 
         return self
