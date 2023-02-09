@@ -405,7 +405,7 @@ class RolloutBuffer(BaseBuffer):
                 next_values = self.values[step + 1]
             ## modified to include n-step advantage
             if n_step_advantage:
-                rew = self.rewards[step] + self.gamma * R * next_non_terminal
+                rew = self.rewards[step] + self.gamma * rew * next_non_terminal
                 self.advantages[step] = rew - self.values[step]
             else:
                 delta = self.rewards[step] + self.gamma * next_values * next_non_terminal - self.values[step]
